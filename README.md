@@ -5,7 +5,7 @@ Jump between edited lines - optional gutter icon
 
 Can jump to next or previous edited-lines or use a 
 quick-panel which shows the edited text and line number. 
-(If the editing text is just whitespace then the panel 
+(If the edited text is just whitespace then the panel 
 will display the full line's text.)
 
 A shortcut can toggle outlining of the edited lines. 
