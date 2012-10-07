@@ -1,0 +1,9 @@
+{
+    "linux_python2.6_lib": "/usr/lib/python2.6/lib-dynload",
+    // a small icon appearing in the gutter: default true
+    "use_icon": true,
+    // will affect the colour of the icon and outlining; default 'comment'
+    // (experiment with "keyword", "variable", etc.., as it is governed by 
+    // your chosen theme.)
+    "icon_scope": "keyword"
+}
