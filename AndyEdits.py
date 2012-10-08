@@ -12,11 +12,14 @@ if sublime.platform() == "linux":
 ICON = path.pardir + '/AndyEdits/icon' if \
     sublime.load_settings(PACKAGE_SETTINGS).get("use_icon", True) else ""
 # a small icon to appear in the gutter - defaults to true
-# (can interfere with ST-bookmarks)
+# (may interfere with ST-bookmarks)
 ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 # affects the colour of the gutter icon and outlining
 
 def adjustEdits(view):
+    # Add recently edited line to all previous edits, 
+    # also joins consecutive edit lines together.
+    # Returns: the edited regions or False if there are none.
     edited = view.get_regions("edited_rgns") or []
     edited_last = view.get_regions("edited_rgn") or []
     if not edited and not edited_last:
@@ -41,6 +44,7 @@ def showRegion(view, reg):
     view.sel().add(reg)
 
 class ToggleEditsCommand(sublime_plugin.TextCommand):
+    # Toggles outlining of edited lines.
     def run(self, edit):
         window = sublime.active_window()
         view = window.active_view() if window != None else None
@@ -95,6 +99,7 @@ class NextEditLineCommand(sublime_plugin.TextCommand):
             sublime.status_message('No edits further down.')
 
 class QuickEditsCommand(sublime_plugin.TextCommand):
+    # Shows a quick panel to jump to edit lines.
     def run(self, edit):
         window = sublime.active_window()
         view = window.active_view() if window != None else None
@@ -130,7 +135,8 @@ class QuickEditsCommand(sublime_plugin.TextCommand):
 
 class CaptureEditing(sublime_plugin.EventListener):
     def on_modified(self, view):
-        # create hidden regions that mirror the edited regions
+        # Create hidden regions that mirror the edited regions.
+        # Maintains a single edit region for the current line.
         window = sublime.active_window()
         curr_view = window.active_view() if window != None else None
         if curr_view is None or curr_view.id() != view.id():
@@ -139,15 +145,20 @@ class CaptureEditing(sublime_plugin.EventListener):
         currA, currB = (sel.begin(), sel.end())
         self.curr_line, _ = view.rowcol(currA)
         if not hasattr(self, 'prev_line'):
+            # on first run
             self.prev_line = self.curr_line
             if currA > 0 and sel.empty():
-                currA -= 1
+                same_line, _ = view.rowcol(currA - 1)
+                if self.curr_line == same_line:
+                    # don't include the newline character from 
+                    # the previous line
+                    currA -= 1
             self.lastx, self.lasty = (currA, currB)
             self.curr_edit = sublime.Region(self.lastx, self.lasty)
             view.add_regions("edited_rgn",[self.curr_edit], ICONSCOPE, \
                 ICON, sublime.HIDDEN | sublime.PERSISTENT)
-            return
-        if self.curr_line == self.prev_line:
+        elif self.curr_line == self.prev_line:
+            # still on the same line
             self.lastx = min(currA, self.lastx)
             self.lasty = max(currB, self.lasty)
             self.curr_edit = sublime.Region(self.lastx, self.lasty)
@@ -155,7 +166,12 @@ class CaptureEditing(sublime_plugin.EventListener):
                 ICON, sublime.HIDDEN | sublime.PERSISTENT)
         else:
             self.prev_line = self.curr_line
+            # moving to a different line
             if currA > 0 and sel.empty():
-                currA -= 1
+                same_line, _ = view.rowcol(currA - 1)
+                if self.curr_line == same_line:
+                    # don't include the newline character from 
+                    # the previous line
+                    currA -= 1
             self.lastx, self.lasty = (currA, currB)
             _ = adjustEdits(view)
