@@ -13,12 +13,15 @@ An optional icon can appear in the gutter - although
 this may interfere if you also use Bookmarks. You 
 could use your own icon if you prefer!
 
+You can remove the edit history for a region using 
+another shortcut, via a quick panel.
+
 Details for edited lines will persist if you close ST, 
 but not if you close the file/view. This is the 
 default persistence behaviour for ST.
 
 My suggestions for your Key Bindings (User) are:
-
+{ "keys": ["ctrl+alt+d"], "command": "delete_edit" },
 { "keys": ["ctrl+alt+h"], "command": "toggle_edits" },
 { "keys": ["ctrl+alt+j"], "command": "quick_edits" },
 { "keys": ["ctrl+alt+k"], "command": "prev_edit_line" },
