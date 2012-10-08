@@ -28,6 +28,7 @@ def adjustEdits(view):
     edited.extend(edited_last)
     for i, r in enumerate(edited):
         if i > 0 and r.begin() == prev_end + 1:
+            # collapse adjoining regions
             new_edits.append(sublime.Region(prev_begin, r.end()))
         else:
             new_edits.append(r)
@@ -43,12 +44,26 @@ def showRegion(view, reg):
     view.show(reg)
     view.sel().add(reg)
 
+def sameView(view_id):
+    if not view_id: return False
+    window = sublime.active_window()
+    view = window.active_view() if window != None else None
+    return (view is not None and view.id() == view_id)
+
+def getEditList(view, edited):
+    the_edits = []
+    for i, r in enumerate(edited):
+        curr_line, _ = view.rowcol(r.begin())
+        curr_text = view.substr(r).strip()[:40]
+        if not len(curr_text):
+            curr_text = view.substr(view.line(r)).strip()[:40] + " (line)"
+        the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
+    return the_edits
+
 class ToggleEditsCommand(sublime_plugin.TextCommand):
     # Toggles outlining of edited lines.
     def run(self, edit):
-        window = sublime.active_window()
-        view = window.active_view() if window != None else None
-        if view is None or view.id() != self.view.id():
+        if not sameView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
         edited = adjustEdits(self.view)
@@ -64,9 +79,7 @@ class ToggleEditsCommand(sublime_plugin.TextCommand):
 
 class PrevEditLineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        window = sublime.active_window()
-        view = window.active_view() if window != None else None
-        if view is None or view.id() != self.view.id():
+        if not sameView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
         currA = self.view.sel()[0].begin()
@@ -82,9 +95,7 @@ class PrevEditLineCommand(sublime_plugin.TextCommand):
 
 class NextEditLineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        window = sublime.active_window()
-        view = window.active_view() if window != None else None
-        if view is None or view.id() != self.view.id():
+        if not sameView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
         currA = self.view.sel()[0].begin()
@@ -101,31 +112,21 @@ class NextEditLineCommand(sublime_plugin.TextCommand):
 class QuickEditsCommand(sublime_plugin.TextCommand):
     # Shows a quick panel to jump to edit lines.
     def run(self, edit):
-        window = sublime.active_window()
-        view = window.active_view() if window != None else None
-        if view is None or view.id() != self.view.id():
+        self.vid = self.view.id()
+        if not sameView(self.vid):
             sublime.status_message('Click into the view/tab first.')
             return
-        self.vid = self.view.id()
         edited = adjustEdits(self.view)
         if not edited:
             sublime.status_message('No edits to list.')
             return
-        the_edits = []
-        for i, r in enumerate(edited):
-            curr_line, _ = self.view.rowcol(r.begin())
-            curr_text = self.view.substr(r).strip()[:40]
-            if not len(curr_text):
-                curr_text = self.view.substr(self.view.line(r)).strip()[:40] \
-                    + " (line)"
-            the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
-        window.show_quick_panel(the_edits, self.on_chosen)
+        the_edits = getEditList(self.view, edited)
+        if the_edits:
+            sublime.active_window().show_quick_panel(the_edits, self.on_chosen)
 
     def on_chosen(self, index):
         if index == -1: return
-        window = sublime.active_window()
-        view = window.active_view() if window != None else None
-        if view is None or view.id() != self.vid:
+        if not sameView(self.vid):
             sublime.status_message('You are in a different view.')
             return
         edited = self.view.get_regions("edited_rgns") or []
@@ -136,25 +137,17 @@ class QuickEditsCommand(sublime_plugin.TextCommand):
 class DeleteEditCommand(sublime_plugin.TextCommand):
     # Shows a quick panel to remove edit history for a region.
     def run(self, edit):
-        window = sublime.active_window()
-        view = window.active_view() if window != None else None
-        if view is None or view.id() != self.view.id():
+        self.vid = self.view.id()
+        if not sameView(self.vid):
             sublime.status_message('Click into the view/tab first.')
             return
-        self.vid = self.view.id()
         edited = adjustEdits(self.view)
         if not edited:
             sublime.status_message('No edit history to delete.')
             return
-        the_edits = []
-        for i, r in enumerate(edited):
-            curr_line, _ = self.view.rowcol(r.begin())
-            curr_text = self.view.substr(r).strip()[:40]
-            if not len(curr_text):
-                curr_text = self.view.substr(self.view.line(r)).strip()[:40] \
-                    + " (line)"
-            the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
-        window.show_quick_panel(the_edits, self.on_chosen)
+        the_edits = getEditList(self.view, edited)
+        if the_edits:
+            sublime.active_window().show_quick_panel(the_edits, self.on_chosen)
 
     def removeTempHighlight(self, old_line):
         self.view.erase_regions("temp_del")
@@ -162,31 +155,27 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
 
     def on_chosen(self, index):
         if index == -1: return
-        window = sublime.active_window()
-        view = window.active_view() if window != None else None
-        if view is None or view.id() != self.vid:
+        if not sameView(self.vid):
             sublime.status_message('You are in a different view.')
             return
         edited = self.view.get_regions("edited_rgns") or []
         reg = edited[index]
-        self.view.add_regions("temp_del", [reg], "invalid", sublime.DRAW_OUTLINED)
         del edited[index]
         self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
             sublime.HIDDEN | sublime.PERSISTENT)
         is_toggled = self.view.get_regions("toggled_edits") or []
         if is_toggled:
             self.view.erase_regions("toggled_edits")
-            window.run_command("toggle_edits")
+            sublime.active_window().run_command("toggle_edits")
         old_line, _ = self.view.rowcol(reg.begin())
+        self.view.add_regions("temp_del", [reg], "invalid", sublime.DRAW_OUTLINED)
         sublime.set_timeout(lambda: self.removeTempHighlight(old_line + 1), 500)
 
 class CaptureEditing(sublime_plugin.EventListener):
     def on_modified(self, view):
         # Create hidden regions that mirror the edited regions.
         # Maintains a single edit region for the current line.
-        window = sublime.active_window()
-        curr_view = window.active_view() if window != None else None
-        if curr_view is None or curr_view.id() != view.id():
+        if not sameView(view.id()):
             return
         sel = view.sel()[0]
         currA, currB = (sel.begin(), sel.end())
@@ -195,6 +184,7 @@ class CaptureEditing(sublime_plugin.EventListener):
             # on first run
             self.prev_line = self.curr_line
             if currA > 0 and sel.empty():
+                # include the first character?
                 same_line, _ = view.rowcol(currA - 1)
                 if self.curr_line == same_line:
                     currA -= 1
@@ -202,11 +192,13 @@ class CaptureEditing(sublime_plugin.EventListener):
         elif self.curr_line == self.prev_line:
             # still on the same line
             self.lastx = min(currA, self.lastx)
-            self.lasty = max(currB, self.lasty)
+            # don't go beyond end of current line..
+            self.lasty = max(currB, min(self.lasty, view.line(sel).end()))
         else:
             # moving to a different line
             self.prev_line = self.curr_line
             if currA > 0 and sel.empty():
+                # include the first character?
                 same_line, _ = view.rowcol(currA - 1)
                 if self.curr_line == same_line:
                     currA -= 1
