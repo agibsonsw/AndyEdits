@@ -27,7 +27,7 @@ def adjustEdits(view):
     new_edits = []
     edited.extend(edited_last)
     for i, r in enumerate(edited):
-        if i > 0 and r.begin() == prev_end:
+        if i > 0 and r.begin() == prev_end + 1:
             new_edits.append(sublime.Region(prev_begin, r.end()))
         else:
             new_edits.append(r)
@@ -133,6 +133,53 @@ class QuickEditsCommand(sublime_plugin.TextCommand):
             showRegion(self.view, reg)
             break
 
+class DeleteEditCommand(sublime_plugin.TextCommand):
+    # Shows a quick panel to remove edit history for a region.
+    def run(self, edit):
+        window = sublime.active_window()
+        view = window.active_view() if window != None else None
+        if view is None or view.id() != self.view.id():
+            sublime.status_message('Click into the view/tab first.')
+            return
+        self.vid = self.view.id()
+        edited = adjustEdits(self.view)
+        if not edited:
+            sublime.status_message('No edit history to delete.')
+            return
+        the_edits = []
+        for i, r in enumerate(edited):
+            curr_line, _ = self.view.rowcol(r.begin())
+            curr_text = self.view.substr(r).strip()[:40]
+            if not len(curr_text):
+                curr_text = self.view.substr(self.view.line(r)).strip()[:40] \
+                    + " (line)"
+            the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
+        window.show_quick_panel(the_edits, self.on_chosen)
+
+    def removeTempHighlight(self, old_line):
+        self.view.erase_regions("temp_del")
+        sublime.status_message("Edit history removed from line %d." % old_line)
+
+    def on_chosen(self, index):
+        if index == -1: return
+        window = sublime.active_window()
+        view = window.active_view() if window != None else None
+        if view is None or view.id() != self.vid:
+            sublime.status_message('You are in a different view.')
+            return
+        edited = self.view.get_regions("edited_rgns") or []
+        reg = edited[index]
+        self.view.add_regions("temp_del", [reg], "invalid", sublime.DRAW_OUTLINED)
+        del edited[index]
+        self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
+            sublime.HIDDEN | sublime.PERSISTENT)
+        is_toggled = self.view.get_regions("toggled_edits") or []
+        if is_toggled:
+            self.view.erase_regions("toggled_edits")
+            window.run_command("toggle_edits")
+        old_line, _ = self.view.rowcol(reg.begin())
+        sublime.set_timeout(lambda: self.removeTempHighlight(old_line + 1), 500)
+
 class CaptureEditing(sublime_plugin.EventListener):
     def on_modified(self, view):
         # Create hidden regions that mirror the edited regions.
@@ -148,22 +195,23 @@ class CaptureEditing(sublime_plugin.EventListener):
             # on first run
             self.prev_line = self.curr_line
             if currA > 0 and sel.empty():
-                currA -= 1
+                same_line, _ = view.rowcol(currA - 1)
+                if self.curr_line == same_line:
+                    currA -= 1
             self.lastx, self.lasty = (currA, currB)
-            self.curr_edit = sublime.Region(self.lastx, self.lasty)
-            view.add_regions("edited_rgn",[self.curr_edit], ICONSCOPE, \
-                ICON, sublime.HIDDEN | sublime.PERSISTENT)
         elif self.curr_line == self.prev_line:
             # still on the same line
             self.lastx = min(currA, self.lastx)
             self.lasty = max(currB, self.lasty)
-            self.curr_edit = sublime.Region(self.lastx, self.lasty)
-            view.add_regions("edited_rgn",[self.curr_edit], ICONSCOPE, \
-                ICON, sublime.HIDDEN | sublime.PERSISTENT)
         else:
-            self.prev_line = self.curr_line
             # moving to a different line
+            self.prev_line = self.curr_line
             if currA > 0 and sel.empty():
-                currA -= 1
+                same_line, _ = view.rowcol(currA - 1)
+                if self.curr_line == same_line:
+                    currA -= 1
             self.lastx, self.lasty = (currA, currB)
             _ = adjustEdits(view)
+        curr_edit = sublime.Region(self.lastx, self.lasty)
+        view.add_regions("edited_rgn", [curr_edit], ICONSCOPE, \
+            ICON, sublime.HIDDEN | sublime.PERSISTENT)
