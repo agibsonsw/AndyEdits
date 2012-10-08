@@ -11,7 +11,9 @@ will display the full line's text.)
 A shortcut can toggle outlining of the edited lines. 
 An optional icon can appear in the gutter - although 
 this may interfere if you also use Bookmarks. You 
-could use your own icon if you prefer!
+could use your own icon if you prefer! icon_scope 
+determines the colour of the icon and outlining: 
+"class" works well for me.
 
 You can remove the edit history for a region using 
 another shortcut, via a quick panel.
