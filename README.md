@@ -28,3 +28,6 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+j"], "command": "quick_edits" },
 { "keys": ["ctrl+alt+k"], "command": "prev_edit_line" },
 { "keys": ["ctrl+alt+l"], "command": "next_edit_line" }
+
+Hint: If you highlight an area, press Space then Undo, 
+the whole of this area will become a single edit-region!
