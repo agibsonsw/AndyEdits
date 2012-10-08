@@ -1,7 +1,7 @@
 AndyEdits
 =========
 
-Jump between edited lines - optional gutter icon
+Jump between edited regions - optional gutter icon
 
 Can jump to next or previous edited-lines or use a 
 quick-panel which shows the edited text and line number. 
