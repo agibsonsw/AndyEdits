@@ -148,11 +148,7 @@ class CaptureEditing(sublime_plugin.EventListener):
             # on first run
             self.prev_line = self.curr_line
             if currA > 0 and sel.empty():
-                same_line, _ = view.rowcol(currA - 1)
-                if self.curr_line == same_line:
-                    # don't include the newline character from 
-                    # the previous line
-                    currA -= 1
+                currA -= 1
             self.lastx, self.lasty = (currA, currB)
             self.curr_edit = sublime.Region(self.lastx, self.lasty)
             view.add_regions("edited_rgn",[self.curr_edit], ICONSCOPE, \
@@ -168,10 +164,6 @@ class CaptureEditing(sublime_plugin.EventListener):
             self.prev_line = self.curr_line
             # moving to a different line
             if currA > 0 and sel.empty():
-                same_line, _ = view.rowcol(currA - 1)
-                if self.curr_line == same_line:
-                    # don't include the newline character from 
-                    # the previous line
-                    currA -= 1
+                currA -= 1
             self.lastx, self.lasty = (currA, currB)
             _ = adjustEdits(view)
