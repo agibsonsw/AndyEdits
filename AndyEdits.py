@@ -16,29 +16,6 @@ ICON = path.pardir + '/AndyEdits/icon' if \
 ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 # affects the colour of the gutter icon and outlining
 
-def adjustEdits(view):
-    # Add recently edited line to all previous edits, 
-    # also joins consecutive edit lines together.
-    # Returns: the edited regions or False if there are none.
-    edited = view.get_regions("edited_rgns") or []
-    edited_last = view.get_regions("edited_rgn") or []
-    if not edited and not edited_last:
-        return False
-    new_edits = []
-    edited.extend(edited_last)
-    for i, r in enumerate(edited):
-        if i > 0 and r.begin() == prev_end + 1:
-            # collapse adjoining regions
-            new_edits.append(sublime.Region(prev_begin, r.end()))
-        else:
-            new_edits.append(r)
-        prev_begin, prev_end = (r.begin(), r.end())
-
-    view.add_regions("edited_rgns", new_edits, ICONSCOPE, ICON, \
-        sublime.HIDDEN | sublime.PERSISTENT)
-    view.erase_regions("edited_rgn")
-    return view.get_regions("edited_rgns") or []
-
 def showRegion(view, reg):
     view.sel().clear()
     view.show(reg)
@@ -50,6 +27,30 @@ def sameView(view_id):
     view = window.active_view() if window != None else None
     return (view is not None and view.id() == view_id)
 
+def adjustEdits(view):
+    # Add recently edited line to all previous edits, 
+    # also joins consecutive edit lines together.
+    # Returns: the edited regions or False if there are none.
+    edited = view.get_regions("edited_rgns") or []
+    edited_last = view.get_regions("edited_rgn") or []
+    if not edited and not edited_last:
+        return False
+    new_edits = []
+    if edited_last:
+        edited.extend(edited_last)
+    for i, r in enumerate(edited):
+        if i > 0 and r.begin() == prev_end + 1:
+            # collapse adjoining regions
+            new_edits.append(sublime.Region(prev_begin, r.end()))
+        else:
+            new_edits.append(r)
+        prev_begin, prev_end = (r.begin(), r.end())
+
+    view.add_regions("edited_rgns", new_edits, ICONSCOPE, ICON, \
+        sublime.HIDDEN | sublime.PERSISTENT)
+    # view.erase_regions("edited_rgn")
+    return view.get_regions("edited_rgns") or []
+
 def getEditList(view, edited):
     the_edits = []
     for i, r in enumerate(edited):
@@ -59,6 +60,45 @@ def getEditList(view, edited):
             curr_text = view.substr(view.line(r)).strip()[:40] + " (line)"
         the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
     return the_edits
+
+def getFullEditList(view, edited):
+    the_edits = []
+    locations = []
+    for i, r in enumerate(edited):
+        curr_line, _ = view.rowcol(r.begin())
+        curr_text = view.substr(r).strip()[:40]
+        if not len(curr_text):
+            curr_text = view.substr(view.line(r)).strip()[:40] + " (line)"
+        the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
+        locations.append((view, r))
+    return the_edits, locations
+
+class ListAllEdits(sublime_plugin.WindowCommand):
+    def run(self):
+        adjustEdits(self.window.active_view())
+        full_list = []
+        self.locations = []
+        for vw in self.window.views():
+            edited = vw.get_regions("edited_rgns") or []
+            if edited:
+                the_edits, locs = getFullEditList(vw, edited)
+                for i, x in enumerate(the_edits):
+                    the_edits[i] = "    " + x
+                if the_edits:
+                    the_edits.insert(0, "%s" % (vw.file_name() or "No filename"))
+                    locs.insert(0, (vw, sublime.Region(0, 0)))
+                    full_list += the_edits
+                    self.locations += locs
+        if full_list:
+            self.window.show_quick_panel(full_list, self.on_chosen)
+        else:
+            sublime.status_message('No edits to list.')
+
+    def on_chosen(self, index):
+        if index == -1: return
+        vw, reg = self.locations[index]
+        sublime.active_window().focus_view(vw)
+        showRegion(vw, reg)
 
 class ToggleEditsCommand(sublime_plugin.TextCommand):
     # Toggles outlining of edited lines.
