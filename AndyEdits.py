@@ -69,7 +69,7 @@ def getFullEditList(view, edited):
         curr_text = view.substr(r).strip()[:40]
         if not len(curr_text):
             curr_text = view.substr(view.line(r)).strip()[:40] + " (line)"
-        the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
+        the_edits.append("    Line: %03d %s" % ( curr_line + 1, curr_text ))
         locations.append((view, r))
     return the_edits, locations
 
@@ -82,8 +82,6 @@ class ListAllEdits(sublime_plugin.WindowCommand):
             edited = vw.get_regions("edited_rgns") or []
             if edited:
                 the_edits, locs = getFullEditList(vw, edited)
-                for i, x in enumerate(the_edits):
-                    the_edits[i] = (" " * 4) + x
                 if the_edits:
                     the_edits.insert(0, "%s" % (vw.file_name() or "No filename"))
                     locs.insert(0, (vw, sublime.Region(0, 0)))
@@ -251,3 +249,21 @@ class CaptureEditing(sublime_plugin.EventListener):
         curr_edit = sublime.Region(self.lastx, self.lasty)
         view.add_regions("edited_rgn", [curr_edit], ICONSCOPE, \
             ICON, sublime.HIDDEN | sublime.PERSISTENT)
+
+    def on_selection_modified(self, view):
+        if hasattr(self, 'prev_line'):
+            curr_line, _ = view.rowcol(view.sel()[0].begin())
+            if self.prev_line != curr_line:
+                found_line = False
+                edited = view.get_regions('edited_rgns') or []
+                for i, r in enumerate(edited):
+                    the_line, _ = view.rowcol(r.begin())
+                    last_line, _ = view.rowcol(r.end())
+                    if the_line <= self.prev_line <= last_line:
+                        found_line = True
+                        break
+                if not found_line:
+                    edited.append(view.line(view.text_point(self.prev_line, 0)))
+                    view.add_regions("edited_rgns", edited, ICONSCOPE, \
+                        ICON, sublime.HIDDEN | sublime.PERSISTENT)
+
