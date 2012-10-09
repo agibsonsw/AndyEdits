@@ -83,7 +83,7 @@ class ListAllEdits(sublime_plugin.WindowCommand):
             if edited:
                 the_edits, locs = getFullEditList(vw, edited)
                 for i, x in enumerate(the_edits):
-                    the_edits[i] = "    " + x
+                    the_edits[i] = (" " * 4) + x
                 if the_edits:
                     the_edits.insert(0, "%s" % (vw.file_name() or "No filename"))
                     locs.insert(0, (vw, sublime.Region(0, 0)))
@@ -216,6 +216,10 @@ class CaptureEditing(sublime_plugin.EventListener):
         # Create hidden regions that mirror the edited regions.
         # Maintains a single edit region for the current line.
         if not sameView(view.id()):
+            # maybe using Find? etc.
+            window = sublime.active_window()
+            edit_view = window.active_view() if window != None else None
+            _ = adjustEdits(edit_view)
             return
         sel = view.sel()[0]
         currA, currB = (sel.begin(), sel.end())
