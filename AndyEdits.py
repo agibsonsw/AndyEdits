@@ -38,11 +38,12 @@ def adjustEdits(view):
     new_edits = []
     if edited_last:
         edited.extend(edited_last)
+    eov = view.size()
     for i, r in enumerate(edited):
         if i > 0 and r.begin() == prev_end + 1:
             # collapse adjoining regions
             new_edits.append(sublime.Region(prev_begin, r.end()))
-        else:
+        elif r.begin() < eov:
             new_edits.append(r)
         prev_begin, prev_end = (r.begin(), r.end())
 
@@ -146,6 +147,21 @@ class NextEditLineCommand(sublime_plugin.TextCommand):
             break
         else:
             sublime.status_message('No edits further down.')
+
+class CreateEditCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        if not sameView(self.view.id()):
+            sublime.status_message('Click into the view/tab first.')
+            return
+        edited = adjustEdits(self.view)
+        curr_region = self.view.sel()[0]
+        if curr_region.empty():
+            sublime.status_message('You must select some text.')
+            return
+        edited.append(curr_region)
+        self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
+            sublime.HIDDEN | sublime.PERSISTENT)
+        sublime.status_message('New edit region created.')
 
 class QuickEditsCommand(sublime_plugin.TextCommand):
     # Shows a quick panel to jump to edit lines.
