@@ -172,6 +172,8 @@ class QuickEditsCommand(sublime_plugin.TextCommand):
             showRegion(self.view, reg)
             break
 
+JUSTDELETED = {}
+
 class DeleteEditCommand(sublime_plugin.TextCommand):
     # Shows a quick panel to remove edit history for a region.
     def run(self, edit):
@@ -208,6 +210,7 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
         old_line, _ = self.view.rowcol(reg.begin())
         self.view.add_regions("temp_del", [reg], "invalid", sublime.DRAW_OUTLINED)
         sublime.set_timeout(lambda: self.removeTempHighlight(old_line + 1), 500)
+        JUSTDELETED[self.vid] = True
 
 class CaptureEditing(sublime_plugin.EventListener):
     def on_modified(self, view):
@@ -251,6 +254,9 @@ class CaptureEditing(sublime_plugin.EventListener):
             ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
+        if JUSTDELETED.has_key(view.id()) and JUSTDELETED[view.id()]:
+            JUSTDELETED[view.id()] = False
+            return
         if hasattr(self, 'prev_line'):
             curr_line, _ = view.rowcol(view.sel()[0].begin())
             if self.prev_line != curr_line:
@@ -263,8 +269,7 @@ class CaptureEditing(sublime_plugin.EventListener):
                         found_line = True
                         break
                 if not found_line:
-                    start = end = view.text_point(self.prev_line, 0)
-                    edited.append(sublime.Region(start, end))
+                    #start = end = view.text_point(self.prev_line, 0)
+                    edited.append(sublime.Region(self.lastx, self.lasty))
                     view.add_regions("edited_rgns", edited, ICONSCOPE, \
                         ICON, sublime.HIDDEN | sublime.PERSISTENT)
-
