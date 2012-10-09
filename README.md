@@ -18,6 +18,8 @@ determines the colour of the icon and outlining:
 You can remove the edit history for a region using 
 another shortcut, via a quick panel.
 
+You can list, and jump to, edits across all open files.
+
 Details for edited lines will persist if you close ST, 
 but not if you close the file/view. This is the 
 default persistence behaviour for ST.
@@ -27,7 +29,13 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+h"], "command": "toggle_edits" },
 { "keys": ["ctrl+alt+j"], "command": "quick_edits" },
 { "keys": ["ctrl+alt+k"], "command": "prev_edit_line" },
-{ "keys": ["ctrl+alt+l"], "command": "next_edit_line" }
+{ "keys": ["ctrl+alt+l"], "command": "next_edit_line" },
+{ "keys": ["ctrl+alt+m"], "command": "list_all_edits" }
 
 Hint: If you highlight an area, press Space then Undo, 
 the whole of this area will become a single edit-region!
+
+CURRENT LIMITATIONS:
+Undo can cause the previously edited region to be lost 
+from the edit history.
+Multi-select will only remember the first selection area.
