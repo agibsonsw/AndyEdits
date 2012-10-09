@@ -201,6 +201,10 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
             return
         edited = self.view.get_regions("edited_rgns") or []
         reg = edited[index]
+        current_editr = self.view.get_regions("edited_rgn")[0]
+        if current_editr and reg.intersects(current_editr):
+            sublime.status_message('Cannot delete most recent edit.')
+            return
         del edited[index]
         self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
             sublime.HIDDEN | sublime.PERSISTENT)
