@@ -16,7 +16,8 @@ determines the colour of the icon and outlining:
 "class" works well for me.
 
 You can remove the edit history for a region using 
-another shortcut, via a quick panel.
+another shortcut, via a quick panel (although you 
+cannot remove the most recent edit).
 
 You can list, and jump to, edits across all open files.
 
@@ -36,6 +37,4 @@ Hint: If you highlight an area, press Space then Undo,
 the whole of this area will become a single edit-region!
 
 CURRENT LIMITATIONS:
-Undo can cause the previously edited region to be lost 
-from the edit history.
 Multi-select will only remember the first selection area.
