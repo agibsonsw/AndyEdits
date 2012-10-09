@@ -187,6 +187,7 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
             return
         the_edits = getEditList(self.view, edited)
         if the_edits:
+            sublime.status_message('Cannot delete the most recent edit.')
             sublime.active_window().show_quick_panel(the_edits, self.on_chosen)
 
     def removeTempHighlight(self, old_line):
@@ -254,10 +255,11 @@ class CaptureEditing(sublime_plugin.EventListener):
             ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
-        if JUSTDELETED.has_key(view.id()) and JUSTDELETED[view.id()]:
+        if JUSTDELETED.has_key(view.id()) and JUSTDELETED[view.id()] == True:
             JUSTDELETED[view.id()] = False
+            self.prev_line = None
             return
-        if hasattr(self, 'prev_line'):
+        if hasattr(self, 'prev_line') and self.prev_line is not None:
             curr_line, _ = view.rowcol(view.sel()[0].begin())
             if self.prev_line != curr_line:
                 found_line = False
