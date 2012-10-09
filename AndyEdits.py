@@ -49,7 +49,6 @@ def adjustEdits(view):
 
     view.add_regions("edited_rgns", new_edits, ICONSCOPE, ICON, \
         sublime.HIDDEN | sublime.PERSISTENT)
-    # view.erase_regions("edited_rgn")
     return view.get_regions("edited_rgns") or []
 
 def getEditList(view, edited):
@@ -98,6 +97,7 @@ class ListAllEdits(sublime_plugin.WindowCommand):
         vw, reg = self.locations[index]
         sublime.active_window().focus_view(vw)
         showRegion(vw, reg)
+        del self.locations[:]
 
 class ToggleEditsCommand(sublime_plugin.TextCommand):
     # Toggles outlining of edited lines.
@@ -149,6 +149,7 @@ class NextEditLineCommand(sublime_plugin.TextCommand):
             sublime.status_message('No edits further down.')
 
 class CreateEditCommand(sublime_plugin.TextCommand):
+    # Create an edit region with the current selection.
     def run(self, edit):
         if not sameView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
@@ -282,16 +283,16 @@ class CaptureEditing(sublime_plugin.EventListener):
         if hasattr(self, 'prev_line') and self.prev_line is not None:
             curr_line, _ = view.rowcol(view.sel()[0].begin())
             if self.prev_line != curr_line:
-                found_line = False
                 edited = view.get_regions('edited_rgns') or []
-                for i, r in enumerate(edited):
-                    the_line, _ = view.rowcol(r.begin())
-                    last_line, _ = view.rowcol(r.end())
-                    if the_line <= self.prev_line <= last_line:
-                        found_line = True
-                        break
-                if not found_line:
-                    #start = end = view.text_point(self.prev_line, 0)
-                    edited.append(sublime.Region(self.lastx, self.lasty))
-                    view.add_regions("edited_rgns", edited, ICONSCOPE, \
-                        ICON, sublime.HIDDEN | sublime.PERSISTENT)
+                if edited:
+                    found_line = False
+                    for i, r in enumerate(edited):
+                        the_line, _ = view.rowcol(r.begin())
+                        last_line, _ = view.rowcol(r.end())
+                        if the_line <= self.prev_line <= last_line:
+                            found_line = True
+                            break
+                    if not found_line:
+                        edited.append(sublime.Region(self.lastx, self.lasty))
+                        view.add_regions("edited_rgns", edited, ICONSCOPE, \
+                            ICON, sublime.HIDDEN | sublime.PERSISTENT)
