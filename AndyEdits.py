@@ -263,7 +263,8 @@ class CaptureEditing(sublime_plugin.EventListener):
                         found_line = True
                         break
                 if not found_line:
-                    edited.append(view.line(view.text_point(self.prev_line, 0)))
+                    start = end = view.text_point(self.prev_line, 0)
+                    edited.append(sublime.Region(start, end))
                     view.add_regions("edited_rgns", edited, ICONSCOPE, \
                         ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
