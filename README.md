@@ -17,7 +17,8 @@ determines the colour of the icon and outlining:
 
 You can remove the edit history for a region using 
 another shortcut, via a quick panel (although you 
-cannot remove the most recent edit).
+cannot remove the most recent edit). If you highlight 
+some text you can create/add it as an edit-region.
 
 You can list, and jump to, edits across all open files.
 
@@ -31,7 +32,8 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+j"], "command": "quick_edits" },
 { "keys": ["ctrl+alt+k"], "command": "prev_edit_line" },
 { "keys": ["ctrl+alt+l"], "command": "next_edit_line" },
-{ "keys": ["ctrl+alt+m"], "command": "list_all_edits" }
+{ "keys": ["ctrl+alt+m"], "command": "list_all_edits" },
+{ "keys": ["ctrl+alt+c"], "command": "create_edit" }
 
 Hint: If you highlight an area, press Space then Undo, 
 the whole of this area will become a single edit-region!
