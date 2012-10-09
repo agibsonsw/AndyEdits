@@ -35,8 +35,5 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+m"], "command": "list_all_edits" },
 { "keys": ["ctrl+alt+c"], "command": "create_edit" }
 
-Hint: If you highlight an area, press Space then Undo, 
-the whole of this area will become a single edit-region!
-
 CURRENT LIMITATIONS:
 Multi-select will only remember the first selection area.
