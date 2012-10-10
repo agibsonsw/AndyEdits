@@ -36,4 +36,8 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+c"], "command": "create_edit" }
 
 CURRENT LIMITATIONS:
+Pressing Undo repeatedly may leave an area as an edit-region, 
+even though you have undone all edits to this region. Being 
+able to create and remove edit regions can help with this issue.
+
 Multi-select will only remember the first selection area.
