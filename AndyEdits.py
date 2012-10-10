@@ -115,6 +115,7 @@ class ToggleEditsCommand(sublime_plugin.TextCommand):
         else:
             self.view.add_regions("toggled_edits", edited, ICONSCOPE, \
                 ICON, sublime.DRAW_OUTLINED)
+            sublime.status_message("There are %d edit regions." % (len(edited)))
 
 class PrevEditLineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -149,7 +150,7 @@ class NextEditLineCommand(sublime_plugin.TextCommand):
             sublime.status_message('No edits further down.')
 
 class CreateEditCommand(sublime_plugin.TextCommand):
-    # Create an edit region with the current selection.
+    # Create an edit region for the current selection.
     def run(self, edit):
         if not sameView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
