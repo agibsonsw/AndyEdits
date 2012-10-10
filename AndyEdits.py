@@ -155,7 +155,7 @@ class CreateEditCommand(sublime_plugin.TextCommand):
         if not sameView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
-        edited = adjustEdits(self.view)
+        edited = adjustEdits(self.view) or []
         curr_region = self.view.sel()[0]
         if curr_region.empty():
             sublime.status_message('You must select some text.')
