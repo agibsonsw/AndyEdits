@@ -248,8 +248,8 @@ class CaptureEditing(sublime_plugin.EventListener):
         sel = view.sel()[0]
         currA, currB = (sel.begin(), sel.end())
         self.curr_line, _ = view.rowcol(currA)
-        if not hasattr(self, 'prev_line'):
-            # on first run
+        if not hasattr(self, 'prev_line') or self.prev_line is None:
+            # on first run, or just deleted an edit region
             self.prev_line = self.curr_line
             if currA > 0 and sel.empty():
                 # include the first character?
@@ -297,3 +297,4 @@ class CaptureEditing(sublime_plugin.EventListener):
                         edited.append(sublime.Region(self.lastx, self.lasty))
                         view.add_regions("edited_rgns", edited, ICONSCOPE, \
                             ICON, sublime.HIDDEN | sublime.PERSISTENT)
+                        print edited
