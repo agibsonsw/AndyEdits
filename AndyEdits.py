@@ -42,8 +42,9 @@ def adjustEdits(view):
     if edited_last:
         edited.extend(edited_last)
     eov = view.size()
-    for i, r in enumerate(edited):
-        if i > 0 and r.begin() == prev_end + 1:
+    for i, r in enumerate(sorted(edited)):
+        print r
+        if i > 0 and r.begin() <= prev_end + 1:
             # collapse adjoining regions
             new_edits.append(sublime.Region(prev_begin, r.end()))
         elif r.begin() < eov:
