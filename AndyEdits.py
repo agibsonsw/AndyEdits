@@ -16,6 +16,8 @@ ICON = path.pardir + '/AndyEdits/icon' if \
 ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 # affects the colour of the gutter icon and outlining
 
+JUSTDELETED = {}
+
 def showRegion(view, reg):
     view.sel().clear()
     view.show(reg)
@@ -190,8 +192,6 @@ class QuickEditsCommand(sublime_plugin.TextCommand):
             showRegion(self.view, reg)
             break
 
-JUSTDELETED = {}
-
 class DeleteEditCommand(sublime_plugin.TextCommand):
     # Shows a quick panel to remove edit history for a region.
     def run(self, edit):
@@ -236,6 +236,7 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
         JUSTDELETED[self.vid] = True
 
 class CaptureEditing(sublime_plugin.EventListener):
+    edit_info = {}
     def on_modified(self, view):
         # Create hidden regions that mirror the edited regions.
         # Maintains a single edit region for the current line.
@@ -245,56 +246,62 @@ class CaptureEditing(sublime_plugin.EventListener):
             edit_view = window.active_view() if window != None else None
             _ = adjustEdits(edit_view)
             return
+        vid = view.id()
+        if not CaptureEditing.edit_info.has_key(vid):
+            CaptureEditing.edit_info[vid] = {}
+        cview = CaptureEditing.edit_info[vid]
         sel = view.sel()[0]
         currA, currB = (sel.begin(), sel.end())
-        self.curr_line, _ = view.rowcol(currA)
-        if not hasattr(self, 'prev_line') or self.prev_line is None:
+        cview['curr_line'], _ = view.rowcol(currA)
+        if not cview.has_key('prev_line') or cview['prev_line'] is None:
             # on first run, or just deleted an edit region
-            self.prev_line = self.curr_line
+            cview['prev_line'] = cview['curr_line']
             if currA > 0 and sel.empty():
                 # include the first character?
                 same_line, _ = view.rowcol(currA - 1)
-                if self.curr_line == same_line:
+                if cview['curr_line'] == same_line:
                     currA -= 1
-            self.lastx, self.lasty = (currA, currB)
-        elif self.curr_line == self.prev_line:
+            cview['lastx'], cview['lasty'] = (currA, currB)
+        elif cview['curr_line'] == cview['prev_line']:
             # still on the same line
-            self.lastx = min(currA, self.lastx)
+            cview['lastx'] = min(currA, cview['lastx'])
             # don't go beyond end of current line..
-            self.lasty = max(currB, min(self.lasty, view.line(sel).end()))
+            cview['lasty'] = max(currB, min(cview['lasty'], view.line(sel).end()))
         else:
             # moving to a different line
-            self.prev_line = self.curr_line
+            cview['prev_line'] = cview['curr_line']
             if currA > 0 and sel.empty():
                 # include the first character?
                 same_line, _ = view.rowcol(currA - 1)
-                if self.curr_line == same_line:
+                if cview['curr_line'] == same_line:
                     currA -= 1
-            self.lastx, self.lasty = (currA, currB)
+            cview['lastx'], cview['lasty'] = (currA, currB)
             _ = adjustEdits(view)
-        curr_edit = sublime.Region(self.lastx, self.lasty)
+        curr_edit = sublime.Region(cview['lastx'], cview['lasty'])
         view.add_regions("edited_rgn", [curr_edit], ICONSCOPE, \
             ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
+        vid = view.id()
+        if not CaptureEditing.edit_info.has_key(vid):
+            CaptureEditing.edit_info[vid] = {}
+        cview = CaptureEditing.edit_info[vid]
         if JUSTDELETED.has_key(view.id()) and JUSTDELETED[view.id()] == True:
             JUSTDELETED[view.id()] = False
-            self.prev_line = None
+            cview['prev_line'] = None
             return
-        if hasattr(self, 'prev_line') and self.prev_line is not None:
+        if cview.has_key('prev_line') and cview['prev_line'] is not None:
             curr_line, _ = view.rowcol(view.sel()[0].begin())
-            if self.prev_line != curr_line:
+            if cview['prev_line'] != curr_line:
                 edited = view.get_regions('edited_rgns') or []
                 if edited:
-                    found_line = False
+                    found_reg = False
+                    prev_reg = sublime.Region(cview['lastx'], cview['lasty'])
                     for i, r in enumerate(edited):
-                        the_line, _ = view.rowcol(r.begin())
-                        last_line, _ = view.rowcol(r.end())
-                        if the_line <= self.prev_line <= last_line:
-                            found_line = True
+                        if r.contains(prev_reg):
+                            found_reg = True
                             break
-                    if not found_line:
-                        edited.append(sublime.Region(self.lastx, self.lasty))
+                    if not found_reg:
+                        edited.append(prev_reg)
                         view.add_regions("edited_rgns", edited, ICONSCOPE, \
                             ICON, sublime.HIDDEN | sublime.PERSISTENT)
-                        print edited
