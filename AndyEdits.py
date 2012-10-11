@@ -282,6 +282,12 @@ class CaptureEditing(sublime_plugin.EventListener):
             ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
+        if not isView(view.id()):
+            # maybe using Find? etc.
+            window = sublime.active_window()
+            edit_view = window.active_view() if window != None else None
+            _ = adjustEdits(edit_view)
+            return
         vid = view.id()
         if not CaptureEditing.edit_info.has_key(vid):
             CaptureEditing.edit_info[vid] = {}
