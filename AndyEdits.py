@@ -17,6 +17,7 @@ ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 # affects the colour of the gutter icon and outlining
 
 JUSTDELETED = {}
+# Uses view.id() as key and a single boolean True/False value.
 
 def showRegion(view, reg):
     view.sel().clear()
@@ -42,13 +43,12 @@ def adjustEdits(view):
         edited.extend(edited_last)
     eov = view.size()
     for i, r in enumerate(edited):
-        if i > 0 and r.begin() <= prev_end + 1:
+        if i > 0 and r.begin() == prev_end + 1:
             # collapse adjoining regions
             new_edits.append(sublime.Region(prev_begin, r.end()))
         elif r.begin() < eov:
             new_edits.append(r)
         prev_begin, prev_end = (r.begin(), r.end())
-
     view.add_regions("edited_rgns", new_edits, ICONSCOPE, ICON, \
         sublime.HIDDEN | sublime.PERSISTENT)
     return view.get_regions("edited_rgns") or []
@@ -277,9 +277,10 @@ class CaptureEditing(sublime_plugin.EventListener):
                     currA -= 1
             cview['lastx'], cview['lasty'] = (currA, currB)
             _ = adjustEdits(view)
-        curr_edit = sublime.Region(cview['lastx'], cview['lasty'])
-        view.add_regions("edited_rgn", [curr_edit], ICONSCOPE, \
-            ICON, sublime.HIDDEN | sublime.PERSISTENT)
+        if cview['lastx'] < cview['lasty']:
+            curr_edit = sublime.Region(cview['lastx'], cview['lasty'])
+            view.add_regions("edited_rgn", [curr_edit], ICONSCOPE, \
+                ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
         if not isView(view.id()):
@@ -298,7 +299,7 @@ class CaptureEditing(sublime_plugin.EventListener):
             return
         if cview.has_key('prev_line') and cview['prev_line'] is not None:
             curr_line, _ = view.rowcol(view.sel()[0].begin())
-            if cview['prev_line'] != curr_line:
+            if (cview['prev_line'] != curr_line) and (cview['lastx'] < cview['lasty']):
                 edited = view.get_regions('edited_rgns') or []
                 if edited:
                     found_reg = False
@@ -311,3 +312,4 @@ class CaptureEditing(sublime_plugin.EventListener):
                         edited.append(prev_reg)
                         view.add_regions("edited_rgns", edited, ICONSCOPE, \
                             ICON, sublime.HIDDEN | sublime.PERSISTENT)
+                        cview['prev_line'] = None
