@@ -20,8 +20,8 @@ JUSTDELETED = {}
 
 def showRegion(view, reg):
     view.sel().clear()
-    view.show(reg)
     view.sel().add(reg)
+    view.show(reg)
 
 def sameView(view_id):
     if not view_id: return False
@@ -86,7 +86,7 @@ class ListAllEdits(sublime_plugin.WindowCommand):
                 the_edits, locs = getFullEditList(vw, edited)
                 if the_edits:
                     the_edits.insert(0, "%s" % (vw.file_name() or "No filename"))
-                    locs.insert(0, (vw, sublime.Region(0, 0)))
+                    locs.insert(0, (vw, vw.sel()[0]))
                     full_list += the_edits
                     self.locations += locs
         if full_list:
