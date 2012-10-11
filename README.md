@@ -41,3 +41,13 @@ even though you have undone all edits to this region. Being
 able to create and remove edit regions can help with this issue.
 
 Multi-select will only remember the first selection area.
+
+It doesn't include automatically inserted tabs, matched brackets
+or quotes within the current edit region. Therefore, the edit-region
+may be split into several edits, and/or the region may end before it
+should. What I'm doing is pressing Ctrl-Alt-H (or using my shortcut
+menu) to toggle highlighting of the edits. Regardless of this
+highlighting step, I can select the whole area and use Ctrl-Alt-C 
+to define it as a single edit-region. I can do this at any time 
+and it has the advantage that I can explicitly define the start 
+and end points of the edit region.
