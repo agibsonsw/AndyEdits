@@ -23,7 +23,7 @@ def showRegion(view, reg):
     view.sel().add(reg)
     view.show(reg)
 
-def sameView(view_id):
+def isView(view_id):
     if not view_id: return False
     window = sublime.active_window()
     view = window.active_view() if window != None else None
@@ -42,7 +42,7 @@ def adjustEdits(view):
         edited.extend(edited_last)
     eov = view.size()
     for i, r in enumerate(edited):
-        if i > 0 and r.begin() == prev_end + 1:
+        if i > 0 and r.begin() <= prev_end + 1:
             # collapse adjoining regions
             new_edits.append(sublime.Region(prev_begin, r.end()))
         elif r.begin() < eov:
@@ -104,7 +104,7 @@ class ListAllEdits(sublime_plugin.WindowCommand):
 class ToggleEditsCommand(sublime_plugin.TextCommand):
     # Toggles outlining of edited lines.
     def run(self, edit):
-        if not sameView(self.view.id()):
+        if not isView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
         edited = adjustEdits(self.view)
@@ -121,7 +121,7 @@ class ToggleEditsCommand(sublime_plugin.TextCommand):
 
 class PrevEditLineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        if not sameView(self.view.id()):
+        if not isView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
         currA = self.view.sel()[0].begin()
@@ -137,7 +137,7 @@ class PrevEditLineCommand(sublime_plugin.TextCommand):
 
 class NextEditLineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        if not sameView(self.view.id()):
+        if not isView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
         currA = self.view.sel()[0].begin()
@@ -154,7 +154,7 @@ class NextEditLineCommand(sublime_plugin.TextCommand):
 class CreateEditCommand(sublime_plugin.TextCommand):
     # Create an edit region for the current selection.
     def run(self, edit):
-        if not sameView(self.view.id()):
+        if not isView(self.view.id()):
             sublime.status_message('Click into the view/tab first.')
             return
         edited = adjustEdits(self.view) or []
@@ -171,7 +171,7 @@ class QuickEditsCommand(sublime_plugin.TextCommand):
     # Shows a quick panel to jump to edit lines.
     def run(self, edit):
         self.vid = self.view.id()
-        if not sameView(self.vid):
+        if not isView(self.vid):
             sublime.status_message('Click into the view/tab first.')
             return
         edited = adjustEdits(self.view)
@@ -184,7 +184,7 @@ class QuickEditsCommand(sublime_plugin.TextCommand):
 
     def on_chosen(self, index):
         if index == -1: return
-        if not sameView(self.vid):
+        if not isView(self.vid):
             sublime.status_message('You are in a different view.')
             return
         edited = self.view.get_regions("edited_rgns") or []
@@ -196,7 +196,7 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
     # Shows a quick panel to remove edit history for a region.
     def run(self, edit):
         self.vid = self.view.id()
-        if not sameView(self.vid):
+        if not isView(self.vid):
             sublime.status_message('Click into the view/tab first.')
             return
         edited = adjustEdits(self.view)
@@ -214,7 +214,7 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
 
     def on_chosen(self, index):
         if index == -1: return
-        if not sameView(self.vid):
+        if not isView(self.vid):
             sublime.status_message('You are in a different view.')
             return
         edited = self.view.get_regions("edited_rgns") or []
@@ -240,7 +240,7 @@ class CaptureEditing(sublime_plugin.EventListener):
     def on_modified(self, view):
         # Create hidden regions that mirror the edited regions.
         # Maintains a single edit region for the current line.
-        if not sameView(view.id()):
+        if not isView(view.id()):
             # maybe using Find? etc.
             window = sublime.active_window()
             edit_view = window.active_view() if window != None else None
@@ -266,7 +266,7 @@ class CaptureEditing(sublime_plugin.EventListener):
             # still on the same line
             cview['lastx'] = min(currA, cview['lastx'])
             # don't go beyond end of current line..
-            cview['lasty'] = max(currB, min(cview['lasty'], view.line(sel).end()))
+            cview['lasty'] = max(currB, min(cview['lasty'] + 1, view.line(sel).end()))
         else:
             # moving to a different line
             cview['prev_line'] = cview['curr_line']
