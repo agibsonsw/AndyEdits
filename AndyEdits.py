@@ -18,6 +18,7 @@ ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 
 JUSTDELETED = {}
 # Uses view.id() as key and a single boolean True/False value.
+# (Prevents a deleted region from being immediately re-created.)
 
 def showRegion(view, reg):
     view.sel().clear()
@@ -43,7 +44,6 @@ def adjustEdits(view):
         edited.extend(edited_last)
     eov = view.size()
     for i, r in enumerate(sorted(edited)):
-        print r
         if i > 0 and r.begin() <= prev_end + 1:
             # collapse adjoining regions
             new_edits.append(sublime.Region(prev_begin, r.end()))
@@ -61,7 +61,7 @@ def getEditList(view, edited):
         curr_text = view.substr(r).strip()[:40]
         if not len(curr_text):
             curr_text = view.substr(view.line(r)).strip()[:40] + " (line)"
-        the_edits.append("Line: %03d %s" % ( curr_line + 1, curr_text ))
+        the_edits.append("Line: %03d %s" % (curr_line + 1, curr_text))
     return the_edits
 
 def getFullEditList(view, edited):
@@ -78,11 +78,11 @@ def getFullEditList(view, edited):
 
 class ListAllEdits(sublime_plugin.WindowCommand):
     def run(self):
-        adjustEdits(self.window.active_view())
         full_list = []
         self.locations = []
         for vw in self.window.views():
-            edited = vw.get_regions("edited_rgns") or []
+            edited = adjustEdits(vw)
+            #edited = vw.get_regions("edited_rgns") or []
             if edited:
                 the_edits, locs = getFullEditList(vw, edited)
                 if the_edits:
@@ -227,10 +227,12 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
         del edited[index]
         self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
             sublime.HIDDEN | sublime.PERSISTENT)
-        is_toggled = self.view.get_regions("toggled_edits") or []
-        if is_toggled:
-            self.view.erase_regions("toggled_edits")
-            sublime.active_window().run_command("toggle_edits")
+        toggled = self.view.get_regions("toggled_edits") or []
+        if toggled:
+            #self.view.erase_regions("toggled_edits")
+            #sublime.active_window().run_command("toggle_edits")
+            self.view.add_regions("toggled_edits", edited, ICONSCOPE, \
+                ICON, sublime.DRAW_OUTLINED)
         old_line, _ = self.view.rowcol(reg.begin())
         self.view.add_regions("temp_del", [reg], "invalid", sublime.DRAW_OUTLINED)
         sublime.set_timeout(lambda: self.removeTempHighlight(old_line + 1), 500)
@@ -241,13 +243,14 @@ class CaptureEditing(sublime_plugin.EventListener):
     def on_modified(self, view):
         # Create hidden regions that mirror the edited regions.
         # Maintains a single edit region for the current line.
-        if not isView(view.id()):
+        vid = view.id()
+        if not isView(vid):
             # maybe using Find? etc.
             window = sublime.active_window()
             edit_view = window.active_view() if window != None else None
-            _ = adjustEdits(edit_view)
+            if edit_view:
+                _ = adjustEdits(edit_view)
             return
-        vid = view.id()
         if not CaptureEditing.edit_info.has_key(vid):
             CaptureEditing.edit_info[vid] = {}
         cview = CaptureEditing.edit_info[vid]
@@ -280,17 +283,18 @@ class CaptureEditing(sublime_plugin.EventListener):
             _ = adjustEdits(view)
         if cview['lastx'] < cview['lasty']:
             curr_edit = sublime.Region(cview['lastx'], cview['lasty'])
-            view.add_regions("edited_rgn", [curr_edit], ICONSCOPE, \
+            view.add_regions("edited_rgn", [curr_edit], "comment", \
                 ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
-        if not isView(view.id()):
+        vid = view.id()
+        if not isView(vid):
             # maybe using Find? etc.
             window = sublime.active_window()
             edit_view = window.active_view() if window != None else None
-            _ = adjustEdits(edit_view)
+            if edit_view:
+                _ = adjustEdits(edit_view)
             return
-        vid = view.id()
         if not CaptureEditing.edit_info.has_key(vid):
             CaptureEditing.edit_info[vid] = {}
         cview = CaptureEditing.edit_info[vid]
@@ -302,15 +306,15 @@ class CaptureEditing(sublime_plugin.EventListener):
             curr_line, _ = view.rowcol(view.sel()[0].begin())
             if (cview['prev_line'] != curr_line) and (cview['lastx'] < cview['lasty']):
                 edited = view.get_regions('edited_rgns') or []
+                prev_reg = sublime.Region(cview['lastx'], cview['lasty'])
+                found_reg = False
                 if edited:
-                    found_reg = False
-                    prev_reg = sublime.Region(cview['lastx'], cview['lasty'])
                     for i, r in enumerate(edited):
                         if r.contains(prev_reg):
                             found_reg = True
                             break
-                    if not found_reg:
-                        edited.append(prev_reg)
-                        view.add_regions("edited_rgns", edited, ICONSCOPE, \
-                            ICON, sublime.HIDDEN | sublime.PERSISTENT)
-                        cview['prev_line'] = None
+                if not found_reg:
+                    edited.append(prev_reg)
+                    view.add_regions("edited_rgns", edited, ICONSCOPE, \
+                        ICON, sublime.HIDDEN | sublime.PERSISTENT)
+                    cview['prev_line'] = None
