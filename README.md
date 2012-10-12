@@ -13,7 +13,8 @@ An optional icon can appear in the gutter - although
 this may interfere if you also use Bookmarks. You 
 could use your own icon if you prefer! icon_scope 
 determines the colour of the icon and outlining: 
-"class" works well for me.
+"class" works well for me. icon_current is the scope 
+for the current edit region.
 
 You can remove the edit history for a region using 
 another shortcut, via a quick panel (although you 
@@ -36,9 +37,8 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+c"], "command": "create_edit" }
 
 CURRENT LIMITATIONS:
-Pressing Undo repeatedly may leave an area as an edit-region, 
-even though you have undone all edits to this region. Being 
-able to create and remove edit regions can help with this issue.
+It should handle multiple-undo/redo commands well, but I need 
+feedback to confirm this.
 
 Multi-select will only remember the first selection area.
 
