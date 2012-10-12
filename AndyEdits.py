@@ -70,23 +70,35 @@ def adjustEdits(view):
 
 def getEditList(view, edited):
     the_edits = []
+    curr_edit = view.get_regions("edited_rgn") or []
+    curr_edit = curr_edit[0] if curr_edit else None
     for i, r in enumerate(edited):
         curr_line, _ = view.rowcol(r.begin())
         curr_text = view.substr(r).strip()[:50]
         if not len(curr_text):
             curr_text = view.substr(view.line(r)).strip()[:50] + " (line)"
-        the_edits.append("Line: %03d %s" % (curr_line + 1, curr_text))
+        if curr_edit and r.intersects(curr_edit):
+            display_line = "*%03d %s" % (curr_line + 1, curr_text)
+        else:
+            display_line = " %03d %s" % (curr_line + 1, curr_text)
+        the_edits.append(display_line)
     return the_edits
 
 def getFullEditList(view, edited):
     the_edits = []
     locations = []
+    curr_edit = view.get_regions("edited_rgn") or []
+    curr_edit = curr_edit[0] if curr_edit else None
     for i, r in enumerate(edited):
         curr_line, _ = view.rowcol(r.begin())
         curr_text = view.substr(r).strip()[:50]
         if not len(curr_text):
             curr_text = view.substr(view.line(r)).strip()[:50] + " (line)"
-        the_edits.append("    Line: %03d %s" % ( curr_line + 1, curr_text ))
+        if curr_edit and r.intersects(curr_edit):
+            display_line = "  * %03d %s" % (curr_line + 1, curr_text)
+        else:
+            display_line = "    %03d %s" % (curr_line + 1, curr_text)
+        the_edits.append(display_line)
         locations.append((view, r))
     return the_edits, locations
 
