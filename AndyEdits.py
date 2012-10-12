@@ -72,9 +72,9 @@ def getEditList(view, edited):
     the_edits = []
     for i, r in enumerate(edited):
         curr_line, _ = view.rowcol(r.begin())
-        curr_text = view.substr(r).strip()[:40]
+        curr_text = view.substr(r).strip()[:50]
         if not len(curr_text):
-            curr_text = view.substr(view.line(r)).strip()[:40] + " (line)"
+            curr_text = view.substr(view.line(r)).strip()[:50] + " (line)"
         the_edits.append("Line: %03d %s" % (curr_line + 1, curr_text))
     return the_edits
 
@@ -83,9 +83,9 @@ def getFullEditList(view, edited):
     locations = []
     for i, r in enumerate(edited):
         curr_line, _ = view.rowcol(r.begin())
-        curr_text = view.substr(r).strip()[:40]
+        curr_text = view.substr(r).strip()[:50]
         if not len(curr_text):
-            curr_text = view.substr(view.line(r)).strip()[:40] + " (line)"
+            curr_text = view.substr(view.line(r)).strip()[:50] + " (line)"
         the_edits.append("    Line: %03d %s" % ( curr_line + 1, curr_text ))
         locations.append((view, r))
     return the_edits, locations
@@ -220,7 +220,7 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
             return
         the_edits = getEditList(self.view, edited)
         if the_edits:
-            sublime.status_message('Cannot delete the most recent edit.')
+            the_edits.insert(0, " -- DELETE EDIT REGION (except most recent) -- ")
             sublime.active_window().show_quick_panel(the_edits, self.on_chosen)
 
     def removeTempHighlight(self, old_line):
@@ -228,17 +228,17 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
         sublime.status_message("Edit history removed from line %d." % old_line)
 
     def on_chosen(self, index):
-        if index == -1: return
+        if index <= 0: return
         if not isView(self.vid):
             sublime.status_message('You are in a different view.')
             return
         edited = self.view.get_regions("edited_rgns") or []
-        reg = edited[index]
+        reg = edited[index - 1]
         current_editr = self.view.get_regions("edited_rgn") or []
         if current_editr and reg.intersects(current_editr[0]):
             sublime.status_message('Cannot delete most recent edit.')
             return
-        del edited[index]
+        del edited[index - 1]
         self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
             sublime.HIDDEN | sublime.PERSISTENT)
         toggled = self.view.get_regions("toggled_edits") or []
