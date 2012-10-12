@@ -5,5 +5,7 @@
     // will affect the colour of the icon and outlining; default 'comment'
     // (experiment with "keyword", "variable", etc.., as it is governed by 
     // your chosen theme.)
-    "icon_scope": "class"
+    "icon_scope": "class",
+    // affects the icon colour for the current edit-region
+    "icon_current": "comment"
 }

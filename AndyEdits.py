@@ -15,6 +15,8 @@ ICON = path.pardir + '/AndyEdits/icon' if \
 # (may interfere with ST-bookmarks)
 ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 # affects the colour of the gutter icon and outlining
+ICONCURRENT = sublime.load_settings(PACKAGE_SETTINGS).get("icon_current", "comment")
+# affects the colour of the gutter icon and outlining
 
 JUSTDELETED = {}
 # Uses view.id() as key and a single boolean True/False value.
@@ -48,8 +50,20 @@ def adjustEdits(view):
             # collapse adjoining regions
             new_edits.append(sublime.Region(prev_begin, r.end()))
         elif r.begin() < eov:
+            curr_line, _ = view.rowcol(r.begin())
+            if i > 0 and curr_line == prev_line + 1:
+                # Check if there are ony spaces and/or tabs between 2 regions;
+                # if so, treat as a single edit-region.
+                inter_region = sublime.Region(prev_end + 1, r.begin() - 1) if \
+                    (prev_end + 1 < r.begin() - 1) else None
+                if inter_region:
+                    inter_content = view.substr(inter_region)
+                    inter_content = inter_content.replace('\t', '').replace(' ', '')
+                    if inter_content == '' or inter_content is None:
+                        r = sublime.Region(prev_begin, r.end())
             new_edits.append(r)
         prev_begin, prev_end = (r.begin(), r.end())
+        prev_line, _ = view.rowcol(prev_end)
     view.add_regions("edited_rgns", new_edits, ICONSCOPE, ICON, \
         sublime.HIDDEN | sublime.PERSISTENT)
     return view.get_regions("edited_rgns") or []
@@ -283,7 +297,7 @@ class CaptureEditing(sublime_plugin.EventListener):
             _ = adjustEdits(view)
         if cview['lastx'] < cview['lasty']:
             curr_edit = sublime.Region(cview['lastx'], cview['lasty'])
-            view.add_regions("edited_rgn", [curr_edit], "comment", \
+            view.add_regions("edited_rgn", [curr_edit], ICONCURRENT, \
                 ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
