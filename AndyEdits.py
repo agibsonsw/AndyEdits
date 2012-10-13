@@ -333,12 +333,11 @@ class CaptureEditing(sublime_plugin.EventListener):
             curr_line, _ = view.rowcol(view.sel()[0].begin())
             if (cview['prev_line'] != curr_line) and (cview['lastx'] < cview['lasty']):
                 edited = view.get_regions('edited_rgns') or []
-                prev_reg = sublime.Region(cview['lastx'], cview['lasty'])
                 for i, r in enumerate(edited):
-                    if r.contains(prev_reg):
+                    if r.begin() >= cview['lastx'] and r.end() <= cview['lasty']:
                         break
                 else:
-                    edited.append(prev_reg)
+                    edited.append(sublime.Region(cview['lastx'], cview['lasty']))
                     view.add_regions("edited_rgns", edited, ICONSCOPE, \
                         ICON, sublime.HIDDEN | sublime.PERSISTENT)
                     cview['prev_line'] = None
