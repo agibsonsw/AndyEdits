@@ -9,14 +9,19 @@ if sublime.platform() == "linux":
     if not linux_lib in sys.path and path.exists(linux_lib):
         sys.path.append(linux_lib)
 
-ICON = path.pardir + '/AndyEdits/icon' if \
-    sublime.load_settings(PACKAGE_SETTINGS).get("use_icon", True) else ""
-# a small icon to appear in the gutter - defaults to true
-# (may interfere with ST-bookmarks)
+# ICON: a small icon to appear in the gutter - defaults to True (use pencil)
+if sublime.load_settings(PACKAGE_SETTINGS).get("use_icon", True):
+    if sublime.load_settings(PACKAGE_SETTINGS).get("ST_icon", False):
+        ICON = sublime.load_settings(PACKAGE_SETTINGS).get("ST_icon")
+    else:
+        ICON = path.pardir + '/AndyEdits/icon'
+else:
+    ICON = ""
+
 ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 # affects the colour of the gutter icon and outlining
 ICONCURRENT = sublime.load_settings(PACKAGE_SETTINGS).get("icon_current", "comment")
-# affects the colour of the gutter icon and outlining
+# affects the colour of the gutter icon for the current edit-region
 
 JUSTDELETED = {}
 # Uses view.id() as key and a single boolean True/False value.
@@ -108,7 +113,6 @@ class ListAllEdits(sublime_plugin.WindowCommand):
         self.locations = []
         for vw in self.window.views():
             edited = adjustEdits(vw)
-            #edited = vw.get_regions("edited_rgns") or []
             if edited:
                 the_edits, locs = getFullEditList(vw, edited)
                 if the_edits:
@@ -144,7 +148,7 @@ class ToggleEditsCommand(sublime_plugin.TextCommand):
         else:
             self.view.add_regions("toggled_edits", edited, ICONSCOPE, \
                 ICON, sublime.DRAW_OUTLINED)
-            sublime.status_message("There are %d edit regions." % (len(edited)))
+            sublime.status_message("There are %d edit region(s)." % (len(edited)))
 
 class PrevEditLineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
@@ -255,8 +259,6 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
             sublime.HIDDEN | sublime.PERSISTENT)
         toggled = self.view.get_regions("toggled_edits") or []
         if toggled:
-            #self.view.erase_regions("toggled_edits")
-            #sublime.active_window().run_command("toggle_edits")
             self.view.add_regions("toggled_edits", edited, ICONSCOPE, \
                 ICON, sublime.DRAW_OUTLINED)
         old_line, _ = self.view.rowcol(reg.begin())
@@ -325,21 +327,17 @@ class CaptureEditing(sublime_plugin.EventListener):
             CaptureEditing.edit_info[vid] = {}
         cview = CaptureEditing.edit_info[vid]
         if JUSTDELETED.has_key(view.id()) and JUSTDELETED[view.id()] == True:
-            JUSTDELETED[view.id()] = False
-            cview['prev_line'] = None
+            JUSTDELETED[view.id()], cview['prev_line'] = (False, None)
             return
         if cview.has_key('prev_line') and cview['prev_line'] is not None:
             curr_line, _ = view.rowcol(view.sel()[0].begin())
             if (cview['prev_line'] != curr_line) and (cview['lastx'] < cview['lasty']):
                 edited = view.get_regions('edited_rgns') or []
                 prev_reg = sublime.Region(cview['lastx'], cview['lasty'])
-                found_reg = False
-                if edited:
-                    for i, r in enumerate(edited):
-                        if r.contains(prev_reg):
-                            found_reg = True
-                            break
-                if not found_reg:
+                for i, r in enumerate(edited):
+                    if r.contains(prev_reg):
+                        break
+                else:
                     edited.append(prev_reg)
                     view.add_regions("edited_rgns", edited, ICONSCOPE, \
                         ICON, sublime.HIDDEN | sublime.PERSISTENT)
