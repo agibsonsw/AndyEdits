@@ -37,8 +37,9 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+c"], "command": "create_edit" }
 
 CURRENT LIMITATIONS:
-It should handle multiple-undo/redo commands well, but I need 
-feedback to confirm this.
+Mulitple Undo, Redo can disturb the edit-history. Use Create or 
+Delete edit-region to correct this. This is a consequence of the 
+STI-API behaviour.
 
 Multi-select will only remember the first selection area.
 
