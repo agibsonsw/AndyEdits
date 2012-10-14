@@ -347,3 +347,8 @@ class CaptureEditing(sublime_plugin.EventListener):
                     view.add_regions("edited_rgns", edited, ICONSCOPE, \
                         ICON, sublime.HIDDEN | sublime.PERSISTENT)
                     cview['prev_line'] = None
+
+    def on_close(self, view):
+        vid = view.id()
+        if CaptureEditing.edit_info.has_key(vid):
+            del CaptureEditing.edit_info[vid]
