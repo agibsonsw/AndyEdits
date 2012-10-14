@@ -293,12 +293,17 @@ class CaptureEditing(sublime_plugin.EventListener):
                 same_line, _ = view.rowcol(currA - 1)
                 if cview['curr_line'] == same_line:
                     currA -= 1
+                cview['to_eol'] = (currB == view.line(sel).end())
             cview['lastx'], cview['lasty'] = (currA, currB)
         elif cview['curr_line'] == cview['prev_line']:
             # still on the same line
             cview['lastx'] = min(currA, cview['lastx'])
-            # don't go beyond end of current line..
-            cview['lasty'] = max(currB, min(cview['lasty'] + 1, view.line(sel).end()))
+            if cview['to_eol']:
+                cview['lasty'] = view.line(sel).end()
+            else:
+                # don't go beyond end of current line..
+                cview['lasty'] = max(currB, min(cview['lasty'] + 1, \
+                    view.line(sel).end()))
         else:
             # moving to a different line
             cview['prev_line'] = cview['curr_line']
@@ -307,6 +312,7 @@ class CaptureEditing(sublime_plugin.EventListener):
                 same_line, _ = view.rowcol(currA - 1)
                 if cview['curr_line'] == same_line:
                     currA -= 1
+            cview['to_eol'] = (currB == view.line(sel).end())
             cview['lastx'], cview['lasty'] = (currA, currB)
             _ = adjustEdits(view)
         if cview['lastx'] < cview['lasty']:
