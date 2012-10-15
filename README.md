@@ -3,12 +3,12 @@ AndyEdits
 
 Jump between edited regions - optional gutter icon
 
-Can jump to next or previous edited-lines or use a 
+Can jump to next or previous edited-region or use a 
 quick-panel which shows the edited text and line number. 
 (If the edited text is just whitespace then the panel 
 will display the full line's text.)
 
-A shortcut can toggle outlining of the edited lines. 
+A shortcut can toggle outlining of the edited regions. 
 An optional icon can appear in the gutter - although 
 this may interfere if you also use Bookmarks. You 
 could use your own icon if you prefer! icon_scope 
@@ -23,7 +23,7 @@ some text you can create/add it as an edit-region.
 
 You can list, and jump to, edits across all open files.
 
-Details for edited lines will persist if you close ST, 
+Details for edited regions will persist if you close ST, 
 but not if you close the file/view. This is the 
 default persistence behaviour for ST.
 
@@ -37,18 +37,17 @@ My suggestions for your Key Bindings (User) are:
 { "keys": ["ctrl+alt+c"], "command": "create_edit" }
 
 CURRENT LIMITATIONS:
-Mulitple Undo, Redo can disturb the edit-history. Use Create or 
+Mulitple Undo, Redo can disturb the edit-history: use Create and/or 
 Delete edit-region to correct this. This is a consequence of the 
-STI-API behaviour.
+ST-API behaviour.
 
 Multi-select will only remember the first selection area.
 
-It doesn't include automatically inserted tabs, matched brackets
-or quotes within the current edit region. Therefore, the edit-region
-may be split into several edits, and/or the region may end before it
-should. What I'm doing is pressing Ctrl-Alt-H (or using my shortcut
-menu) to toggle highlighting of the edits. Regardless of this
-highlighting step, I can select the whole area and use Ctrl-Alt-C 
-to define it as a single edit-region. I can do this at any time 
-and it has the advantage that I can explicitly define the start 
-and end points of the edit region.
+It doesn't include automatically inserted (matched) brackets
+or quotes within the current edit-region, unless editing starts on 
+a new line or at the end of an existing line. Therefore, the 
+edit-region may be split into several edits, and/or the region may 
+end before it should. Selecting the area and using Ctrl-Alt-C to 
+Create a new (single) edit-region will correct this. This can be 
+done at any time and allows you to explicity determine the start 
+and end points for the edit-region.
