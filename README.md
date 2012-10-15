@@ -9,12 +9,11 @@ quick-panel which shows the edited text and line number.
 will display the full line's text.)
 
 A shortcut can toggle outlining of the edited regions. 
-An optional icon can appear in the gutter - although 
-this may interfere if you also use Bookmarks. You 
+An optional icon can appear in the gutter. You 
 could use your own icon if you prefer! icon_scope 
 determines the colour of the icon and outlining: 
 "class" works well for me. icon_current is the scope 
-for the current edit region.
+for the current edit-region.
 
 You can remove the edit history for a region using 
 another shortcut, via a quick panel (although you 
