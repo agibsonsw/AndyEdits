@@ -52,8 +52,8 @@ done at any time and allows you to explicity determine the start
 and end points for the edit-region.
 
 ST-API ISSUE:
-An issue when using add_regions(), and relating to colour themes, 
-may arise. The gutter icon may not display and the scrollbar and 
-ruler may be poorly rendered. Switching to a default theme and back 
+An issue when using add_regions() with Windows, and relating to colour 
+themes, may arise. The gutter icon may not display and the scrollbar 
+and ruler may be poorly rendered. Switching to a default theme and back 
 to your chosen theme should resolve this. You may also need to close 
 and re-start ST.
