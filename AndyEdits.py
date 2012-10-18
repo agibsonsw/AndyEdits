@@ -57,8 +57,8 @@ def adjustEdits(view):
         elif r.begin() < eov:
             curr_line, _ = view.rowcol(r.begin())
             if i > 0 and curr_line == prev_line + 1:
-                # Check if there are ony spaces and/or tabs between 2 regions;
-                # if so, treat as a single edit-region.
+                # Check if there are ony spaces and/or tabs between 2 regions 
+                # (on adjacent lines); if so, treat as a single edit-region.
                 inter_region = sublime.Region(prev_end + 1, r.begin() - 1) if \
                     (prev_end + 1 < r.begin() - 1) else None
                 if inter_region:
@@ -69,6 +69,8 @@ def adjustEdits(view):
             new_edits.append(r)
         prev_begin, prev_end = (r.begin(), r.end())
         prev_line, _ = view.rowcol(prev_end)
+    view.erase_regions("edited_rgn")
+    view.erase_regions("edited_rgns")
     view.add_regions("edited_rgns", new_edits, ICONSCOPE, ICON, \
         sublime.HIDDEN | sublime.PERSISTENT)
     return view.get_regions("edited_rgns") or []
@@ -194,6 +196,7 @@ class CreateEditCommand(sublime_plugin.TextCommand):
             sublime.status_message('You must select some text.')
             return
         edited.append(curr_region)
+        self.view.erase_regions("edited_rgns")
         self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
             sublime.HIDDEN | sublime.PERSISTENT)
         sublime.status_message('New edit region created.')
@@ -255,10 +258,12 @@ class DeleteEditCommand(sublime_plugin.TextCommand):
             sublime.status_message('Cannot delete most recent edit.')
             return
         del edited[index - 1]
+        self.view.erase_regions("edited_rgns")
         self.view.add_regions("edited_rgns", edited, ICONSCOPE, ICON, \
             sublime.HIDDEN | sublime.PERSISTENT)
         toggled = self.view.get_regions("toggled_edits") or []
         if toggled:
+            self.view.erase_regions("toggled_edits")
             self.view.add_regions("toggled_edits", edited, ICONSCOPE, \
                 ICON, sublime.DRAW_OUTLINED)
         old_line, _ = self.view.rowcol(reg.begin())
@@ -273,11 +278,6 @@ class CaptureEditing(sublime_plugin.EventListener):
         # Maintains a single edit region for the current line.
         vid = view.id()
         if not isView(vid):
-            # maybe using Find? etc.
-            window = sublime.active_window()
-            edit_view = window.active_view() if window != None else None
-            if edit_view:
-                _ = adjustEdits(edit_view)
             return
         if not CaptureEditing.edit_info.has_key(vid):
             CaptureEditing.edit_info[vid] = {}
@@ -293,13 +293,13 @@ class CaptureEditing(sublime_plugin.EventListener):
                 same_line, _ = view.rowcol(currA - 1)
                 if cview['curr_line'] == same_line:
                     currA -= 1
-                cview['to_eol'] = (currB == view.line(sel).end())
+                cview['to_eol'] = (currB == view.line(currB).end())
             cview['lastx'], cview['lasty'] = (currA, currB)
         elif cview['curr_line'] == cview['prev_line']:
             # still on the same line
             cview['lastx'] = min(currA, cview['lastx'])
             if cview['to_eol']:
-                cview['lasty'] = view.line(sel).end()
+                cview['lasty'] = view.line(currB).end()
             else:
                 # don't go beyond end of current line..
                 cview['lasty'] = max(currB, min(cview['lasty'] + 1, \
@@ -312,28 +312,24 @@ class CaptureEditing(sublime_plugin.EventListener):
                 same_line, _ = view.rowcol(currA - 1)
                 if cview['curr_line'] == same_line:
                     currA -= 1
-            cview['to_eol'] = (currB == view.line(sel).end())
+            cview['to_eol'] = (currB == view.line(currB).end())
             cview['lastx'], cview['lasty'] = (currA, currB)
             _ = adjustEdits(view)
         if cview['lastx'] < cview['lasty']:
             curr_edit = sublime.Region(cview['lastx'], cview['lasty'])
+            view.erase_regions("edited_rgn")
             view.add_regions("edited_rgn", [curr_edit], ICONCURRENT, \
                 ICON, sublime.HIDDEN | sublime.PERSISTENT)
 
     def on_selection_modified(self, view):
         vid = view.id()
         if not isView(vid):
-            # maybe using Find? etc.
-            window = sublime.active_window()
-            edit_view = window.active_view() if window != None else None
-            if edit_view:
-                _ = adjustEdits(edit_view)
             return
         if not CaptureEditing.edit_info.has_key(vid):
             CaptureEditing.edit_info[vid] = {}
         cview = CaptureEditing.edit_info[vid]
-        if JUSTDELETED.has_key(view.id()) and JUSTDELETED[view.id()] == True:
-            JUSTDELETED[view.id()], cview['prev_line'] = (False, None)
+        if JUSTDELETED.has_key(vid) and JUSTDELETED[vid] == True:
+            JUSTDELETED[vid], cview['prev_line'] = (False, None)
             return
         if cview.has_key('prev_line') and cview['prev_line'] is not None:
             curr_line, _ = view.rowcol(view.sel()[0].begin())
@@ -344,6 +340,7 @@ class CaptureEditing(sublime_plugin.EventListener):
                         break
                 else:
                     edited.append(sublime.Region(cview['lastx'], cview['lasty']))
+                    view.erase_regions("edited_rgns")
                     view.add_regions("edited_rgns", edited, ICONSCOPE, \
                         ICON, sublime.HIDDEN | sublime.PERSISTENT)
                     cview['prev_line'] = None
