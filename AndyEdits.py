@@ -53,7 +53,8 @@ def adjustEdits(view):
     for i, r in enumerate(sorted(edited)):
         if i > 0 and r.begin() <= prev_end + 1:
             # collapse adjoining regions
-            new_edits.append(sublime.Region(prev_begin, r.end()))
+            new_edits.pop()
+            r = sublime.Region(prev_begin, r.end())
         elif r.begin() < eov:
             curr_line, _ = view.rowcol(r.begin())
             if i > 0 and curr_line == prev_line + 1:
@@ -65,8 +66,9 @@ def adjustEdits(view):
                     inter_content = view.substr(inter_region)
                     inter_content = inter_content.replace('\t', '').replace(' ', '')
                     if inter_content == '' or inter_content is None:
+                        new_edits.pop()
                         r = sublime.Region(prev_begin, r.end())
-            new_edits.append(r)
+        new_edits.append(r)
         prev_begin, prev_end = (r.begin(), r.end())
         prev_line, _ = view.rowcol(prev_end)
     view.erase_regions("edited_rgn")
