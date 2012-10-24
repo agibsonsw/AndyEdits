@@ -50,11 +50,13 @@ def adjustEdits(view):
     if edited_last:
         edited.extend(edited_last)
     eov = view.size()
+    view.erase_regions("edited_rgn")
+    view.erase_regions("edited_rgns")
     for i, r in enumerate(sorted(edited)):
         if i > 0 and r.begin() <= prev_end + 1:
             # collapse adjoining regions
             new_edits.pop()
-            r = sublime.Region(prev_begin, r.end())
+            r = sublime.Region(prev_begin, max(r.end(), prev_end))
         elif r.begin() < eov:
             curr_line, _ = view.rowcol(r.begin())
             if i > 0 and curr_line == prev_line + 1:
@@ -64,15 +66,13 @@ def adjustEdits(view):
                     (prev_end + 1 < r.begin() - 1) else None
                 if inter_region:
                     inter_content = view.substr(inter_region)
-                    inter_content = inter_content.replace('\t', '').replace(' ', '')
+                    inter_content = inter_content.strip()
                     if inter_content == '' or inter_content is None:
                         new_edits.pop()
-                        r = sublime.Region(prev_begin, r.end())
+                        r = sublime.Region(prev_begin, max(r.end(), prev_end))
         new_edits.append(r)
         prev_begin, prev_end = (r.begin(), r.end())
         prev_line, _ = view.rowcol(prev_end)
-    view.erase_regions("edited_rgn")
-    view.erase_regions("edited_rgns")
     view.add_regions("edited_rgns", new_edits, ICONSCOPE, ICON, \
         sublime.HIDDEN | sublime.PERSISTENT)
     return view.get_regions("edited_rgns") or []
@@ -308,6 +308,16 @@ class CaptureEditing(sublime_plugin.EventListener):
                     view.line(sel).end()))
         else:
             # moving to a different line
+            if cview['to_eol']:
+                # adjust previous edit region to end-of-line
+                prev_editl = view.get_regions("edited_rgn") or []
+                if prev_editl:
+                    prev_editl = prev_editl[0]
+                    prev_editl = sublime.Region(prev_editl.begin(), \
+                        view.line(prev_editl.begin()).end())
+                    view.erase_regions("edited_rgn")
+                    view.add_regions("edited_rgn", [prev_editl], ICONCURRENT, \
+                        ICON, sublime.HIDDEN | sublime.PERSISTENT)
             cview['prev_line'] = cview['curr_line']
             if currA > 0 and sel.empty():
                 # include the first character?
