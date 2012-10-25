@@ -307,16 +307,16 @@ class CaptureEditing(sublime_plugin.EventListener):
                     view.line(sel).end()))
         else:
             # moving to a different line
-            if cview['to_eol']:
-                # adjust previous edit region to end-of-line
-                prev_editl = view.get_regions("edited_rgn") or []
-                if prev_editl:
-                    prev_editl = prev_editl[0]
-                    prev_editl = sublime.Region(prev_editl.begin(), \
-                        view.line(prev_editl.begin()).end())
-                    view.erase_regions("edited_rgn")
-                    view.add_regions("edited_rgn", [prev_editl], ICONCURRENT, \
-                        ICON, sublime.HIDDEN | sublime.PERSISTENT)
+            # if cview['to_eol']:
+            #     # adjust previous edit region to end-of-line
+            #     prev_editl = view.get_regions("edited_rgn") or []
+            #     if prev_editl:
+            #         prev_editl = prev_editl[0]
+            #         prev_editl = sublime.Region(prev_editl.begin(), \
+            #             view.line(prev_editl.begin()).end())
+            #         view.erase_regions("edited_rgn")
+            #         view.add_regions("edited_rgn", [prev_editl], ICONCURRENT, \
+            #             ICON, sublime.HIDDEN | sublime.PERSISTENT)
             cview['prev_line'] = cview['curr_line']
             if currA > 0 and sel.empty():
                 # include the first character?
