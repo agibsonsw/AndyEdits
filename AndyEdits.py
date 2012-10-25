@@ -50,7 +50,6 @@ def adjustEdits(view):
     if edited_last:
         edited.extend(edited_last)
     eov = view.size()
-    view.erase_regions("edited_rgn")
     view.erase_regions("edited_rgns")
     for i, r in enumerate(sorted(edited)):
         if i > 0 and r.begin() <= prev_end + 1:
