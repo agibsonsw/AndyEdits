@@ -1,5 +1,6 @@
 import sublime, sublime_plugin
 from os import path
+import datetime
 
 PACKAGE_SETTINGS = "AndyEdits.sublime-settings"
 if sublime.platform() == "linux":
@@ -23,6 +24,7 @@ ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 ICONCURRENT = sublime.load_settings(PACKAGE_SETTINGS).get("icon_current", "comment")
 # affects the colour of the gutter icon for the current edit-region
 
+OUTPUT_EDITS = sublime.load_settings(PACKAGE_SETTINGS).get("output_edits", False)
 JUSTDELETED = {}
 # Uses view.id() as key and a single boolean True/False value.
 # (Prevents a deleted region from being immediately re-created.)
@@ -360,3 +362,25 @@ class CaptureEditing(sublime_plugin.EventListener):
         vid = view.id()
         if CaptureEditing.edit_info.has_key(vid):
             del CaptureEditing.edit_info[vid]
+
+    def on_post_save(self, view):
+        vid = view.id()
+        re_activate = isView(vid)
+        if not OUTPUT_EDITS: return
+        _ = adjustEdits(view)
+        saved_edits = view.get_regions("edited_rgns")
+        if not saved_edits: return
+        newview = sublime.active_window().new_file()
+        edit = newview.begin_edit()
+        newview.insert(edit, 0, view.file_name() + "\n")
+        newview.insert(edit, newview.size(), 
+            datetime.datetime.now().strftime("%c") + '\n')
+
+        for i, r in enumerate(sorted(saved_edits)):
+            editline, _ = view.rowcol(r.begin())
+            newview.insert(edit, newview.size(), "\n-----\nLine: " + \
+                str(editline) + '\n')
+            newview.insert(edit, newview.size(), view.substr(r))
+        newview.end_edit(edit)
+        if re_activate:
+            sublime.active_window().focus_view(view)
