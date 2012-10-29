@@ -23,8 +23,11 @@ ICONSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("icon_scope", "comment")
 # affects the colour of the gutter icon and outlining
 ICONCURRENT = sublime.load_settings(PACKAGE_SETTINGS).get("icon_current", "comment")
 # affects the colour of the gutter icon for the current edit-region
+SAVEDSCOPE = sublime.load_settings(PACKAGE_SETTINGS).get("saved_scope", "keyword")
 
+SAVED_EDITS = sublime.load_settings(PACKAGE_SETTINGS).get("saved_edits", False)
 OUTPUT_EDITS = sublime.load_settings(PACKAGE_SETTINGS).get("output_edits", False)
+
 JUSTDELETED = {}
 # Uses view.id() as key and a single boolean True/False value.
 # (Prevents a deleted region from being immediately re-created.)
@@ -364,12 +367,17 @@ class CaptureEditing(sublime_plugin.EventListener):
             del CaptureEditing.edit_info[vid]
 
     def on_post_save(self, view):
+        if not SAVED_EDITS: return
         vid = view.id()
         re_activate = isView(vid)
-        if not OUTPUT_EDITS: return
+        if not re_activate: return
         _ = adjustEdits(view)
-        saved_edits = view.get_regions("edited_rgns")
+        saved_edits = view.get_regions('edited_rgns')
         if not saved_edits: return
+        view.add_regions("saved_rgns", saved_edits, SAVEDSCOPE, \
+                        ICON, sublime.DRAW_OUTLINED)
+        
+        if not OUTPUT_EDITS: return
         newview = sublime.active_window().new_file()
         edit = newview.begin_edit()
         newview.insert(edit, 0, view.file_name() + "\n")
