@@ -375,7 +375,7 @@ class CaptureEditing(sublime_plugin.EventListener):
         saved_edits = view.get_regions('edited_rgns')
         if not saved_edits: return
         view.add_regions("saved_rgns", saved_edits, SAVEDSCOPE, \
-                        ICON, sublime.DRAW_OUTLINED)
+                        ICON, sublime.PERSISTENT | sublime.DRAW_OUTLINED)
         
         if not OUTPUT_EDITS: return
         newview = sublime.active_window().new_file()
