@@ -2,6 +2,7 @@ AndyEdits
 =========
 
 Jump between edited regions - optional gutter icon
+THERE IS CURRENTLY A RENDERING ISSUE WITH WINDOWS
 
 Can jump to next or previous edited-region or use a 
 quick-panel which shows the edited text and line number. 
