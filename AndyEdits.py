@@ -285,13 +285,13 @@ class CaptureEditing(sublime_plugin.EventListener):
         vid = view.id()
         if not isView(vid):
             return
-        if not CaptureEditing.edit_info.has_key(vid):
+        if not vid in CaptureEditing.edit_info:
             CaptureEditing.edit_info[vid] = {}
         cview = CaptureEditing.edit_info[vid]
         sel = view.sel()[0]
         currA, currB = (sel.begin(), sel.end())
         cview['curr_line'], _ = view.rowcol(currA)
-        if not cview.has_key('prev_line') or cview['prev_line'] is None:
+        if not ('prev_line' in cview) or cview['prev_line'] is None:
             # on first run, or just deleted an edit region
             cview['prev_line'] = cview['curr_line']
             if currA > 0 and sel.empty():
@@ -341,13 +341,13 @@ class CaptureEditing(sublime_plugin.EventListener):
         vid = view.id()
         if not isView(vid):
             return
-        if not CaptureEditing.edit_info.has_key(vid):
+        if not vid in CaptureEditing.edit_info:
             CaptureEditing.edit_info[vid] = {}
         cview = CaptureEditing.edit_info[vid]
-        if JUSTDELETED.has_key(vid) and JUSTDELETED[vid] == True:
+        if vid in JUSTDELETED and JUSTDELETED[vid] == True:
             JUSTDELETED[vid], cview['prev_line'] = (False, None)
             return
-        if cview.has_key('prev_line') and cview['prev_line'] is not None:
+        if ('prev_line' in cview) and cview['prev_line'] is not None:
             curr_line, _ = view.rowcol(view.sel()[0].begin())
             if (cview['prev_line'] != curr_line) and (cview['lastx'] < cview['lasty']):
                 edited = view.get_regions('edited_rgns') or []
@@ -363,7 +363,7 @@ class CaptureEditing(sublime_plugin.EventListener):
 
     def on_close(self, view):
         vid = view.id()
-        if CaptureEditing.edit_info.has_key(vid):
+        if vid in CaptureEditing.edit_info:
             del CaptureEditing.edit_info[vid]
 
     def on_post_save(self, view):
